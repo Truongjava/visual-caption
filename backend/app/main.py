@@ -12,10 +12,9 @@ genai.configure(api_key="AIzaSyBWHNuLH-RMoCSxa1TMnZ9pFaVl43z8CCQ")
 # Khởi tạo FastAPI
 app = FastAPI()
 
-# Cấu hình CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Chấp nhận tất cả domain
+    allow_origins=["http://localhost:3000", "https://visual-caption-4fpe.onrender.com"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
