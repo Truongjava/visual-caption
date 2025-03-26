@@ -1,9 +1,16 @@
-import axios from "axios";
+// import axios from "axios";
+
+// const api = axios.create({
+//   baseURL: "/api",
+//   withCredentials: true,
+// });
 
 const api = axios.create({
-  baseURL: "/api",
+  baseURL: "https://visual-caption-backend.onrender.com/api",
   withCredentials: true,
 });
+
+
 
 // Auth APIs
 const auth = {
