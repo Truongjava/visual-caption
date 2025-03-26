@@ -1,16 +1,9 @@
-// import axios from "axios";
-
-// const api = axios.create({
-//   baseURL: "/api",
-//   withCredentials: true,
-// });
+import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://visual-caption-backend.onrender.com/api",
+  baseURL: "/api",
   withCredentials: true,
 });
-
-
 
 // Auth APIs
 const auth = {
