@@ -1,3 +1,6 @@
 venv/
 __pycache__/
 .env
+# Ignore unnecessary files
+frontend/node_modules
+venv
