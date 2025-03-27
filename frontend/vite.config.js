@@ -12,9 +12,9 @@ export default defineConfig({
         target: "https://visual-caption-backend.onrender.com",
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/api/, "/api"), 
+        rewrite: (path) => path.replace(/^\/api/, ""), // Xóa "/api" thay vì giữ nguyên
       },
-    },
+    },    
   },
   build: {
     outDir: "dist", 
