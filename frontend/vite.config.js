@@ -1,22 +1,22 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+// import { defineConfig } from "vite";
+// import react from "@vitejs/plugin-react";
 
-export default defineConfig({
-  // base: "./", 
-  plugins: [react()],
-  server: {
-    port: 5173,
-    host: true,
-    proxy: {
-      "/api": {
-        target: "https://visual-caption-backend.onrender.com",
-        changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path.replace(/^\/api/, ""), // Xóa "/api" thay vì giữ nguyên
-      },
-    },    
-  },
-  build: {
-    outDir: "dist", 
-  },
-});
+// export default defineConfig({
+//   // base: "./", 
+//   plugins: [react()],
+//   server: {
+//     port: 5173,
+//     host: true,
+//     proxy: {
+//       "/api": {
+//         target: "https://visual-caption-backend.onrender.com",
+//         changeOrigin: true,
+//         secure: false,
+//         rewrite: (path) => path.replace(/^\/api/, "/api"), 
+//       },
+//     },    
+//   },
+//   build: {
+//     outDir: "dist", 
+//   },
+// });
