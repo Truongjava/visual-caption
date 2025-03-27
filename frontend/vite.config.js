@@ -20,3 +20,24 @@
 //     outDir: "dist", 
 //   },
 // });
+
+
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: process.env.PORT || 0, // Cho phép chọn cổng ngẫu nhiên
+    host: true,
+    proxy: {
+      "/api": {
+        target: "https://visual-caption-backend.onrender.com",
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, "/api"), 
+      },
+    },
+  },
+  build: {
+    outDir: "dist",
+  },
+});
