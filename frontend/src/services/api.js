@@ -55,7 +55,7 @@
   import axios from "axios";
 
   // Lấy URL từ biến môi trường, nếu không có thì mặc định là local
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5173/api";
+  const API_URL = import.meta.env.VITE_API_URL || "https://visual-caption-backend.onrender.com/api";
   
   const api = axios.create({
     baseURL: API_URL,
