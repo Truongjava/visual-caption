@@ -7,7 +7,7 @@ async def generate_caption(image_bytes: bytes) -> str:
     # prompt = "Hãy mô tả bức ảnh này bằng tiếng Việt một cách chi tiết."
     # prompt = "Hãy mô tả bức ảnh này bằng tiếng Việt chỉ bằng 1 câu. chỉ mô tả đặc điểm chính. mô tả ngắn gọn. "
     
-    prompt = "Hãy mô tả bức ảnh này bằng tiếng Việt chỉ bằng 1 câu với chỉ số bleu score = 10"
+    prompt = "Hãy mô tả bức ảnh này bằng tiếng Việt chỉ bằng 1 câu, hãy miêu tả sai 1 vài đặc điểm."
 
     response = model.generate_content([
         prompt,
