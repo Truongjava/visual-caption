@@ -1,6 +1,33 @@
+import smtplib
+import ssl
 import random
+from email.message import EmailMessage
 
-async def send_otp_email(email, store):
-    otp = "".join([str(random.randint(0, 9)) for _ in range(6)])
-    store[email] = otp
-    print(f"📧 Sent OTP {otp} to {email}")  # Thực tế gửi qua SMTP
+# Fake OTP storage - nên dùng Redis hoặc DB thật
+OTP_STORE = {}
+
+# Gmail cấu hình
+EMAIL_SENDER = "thanhtruongle477@gmail.com"
+EMAIL_APP_PASSWORD = "mfnrydwyhnguzyeq" 
+EMAIL_SUBJECT = "Your OTP Code"
+
+def generate_otp():
+    return str(random.randint(100000, 999999))
+
+async def send_otp_email(email: str, otp_store: dict):
+    otp = generate_otp()
+    otp_store[email] = otp
+
+    body = f"Your OTP code is: {otp}"
+
+    msg = EmailMessage()
+    msg["Subject"] = EMAIL_SUBJECT
+    msg["From"] = EMAIL_SENDER
+    msg["To"] = email
+    msg.set_content(body)
+
+    context = ssl.create_default_context()
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
+        server.login(EMAIL_SENDER, EMAIL_APP_PASSWORD)
+        server.send_message(msg)
