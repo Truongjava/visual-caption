@@ -3,10 +3,9 @@ import ssl
 import random
 from email.message import EmailMessage
 
-# Fake OTP storage - nên dùng Redis hoặc DB thật
+
 OTP_STORE = {}
 
-# Gmail cấu hình
 EMAIL_SENDER = "thanhtruongle477@gmail.com"
 EMAIL_APP_PASSWORD = "mfnrydwyhnguzyeq" 
 EMAIL_SUBJECT = "Your OTP Code"

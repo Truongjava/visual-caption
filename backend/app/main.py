@@ -4,6 +4,8 @@ from fastapi.responses import FileResponse
 from app.auth_service import router as auth_router
 from app.caption_service import router as caption_router
 from app.history_service import router as history_router
+from app.image_service import router as image_router
+from app.upload_service import router as upload_router 
 import google.generativeai as genai
 
 # Cấu hình Google Gemini API
@@ -32,3 +34,5 @@ def home():
 app.include_router(caption_router, prefix="/api/caption", tags=["Caption"])
 app.include_router(auth_router, prefix="/api/auth", tags=["Auth"])
 app.include_router(history_router, prefix="/api", tags=["History"])
+app.include_router(image_router, prefix="/api/image", tags=["Image"])
+app.include_router(upload_router, prefix="/uploads", tags=["Uploads"])

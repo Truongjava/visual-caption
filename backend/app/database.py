@@ -14,3 +14,7 @@ SessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=F
 
 mongo_client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URI)
 mongo_db = mongo_client["visualCaption"]
+
+async def get_db():
+    async with SessionLocal() as session:
+        yield session
