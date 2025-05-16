@@ -6,8 +6,8 @@ from email.message import EmailMessage
 
 OTP_STORE = {}
 
-EMAIL_SENDER = "thanhtruongle477@gmail.com"
-EMAIL_APP_PASSWORD = "mfnrydwyhnguzyeq" 
+EMAIL_SENDER = "visualcaption@gmail.com"
+EMAIL_APP_PASSWORD = "mycjyoffhilzzfkt" 
 EMAIL_SUBJECT = "Your OTP Code"
 
 def generate_otp():
