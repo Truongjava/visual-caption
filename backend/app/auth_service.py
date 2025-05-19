@@ -151,8 +151,6 @@ async def get_feedbacks_for_user(
         ORDER BY created_at DESC
     """), {"uid": str(user_id)})
     rows = result.fetchall()
-
-    # 3. Chuyển thành list[FeedbackOut]
     return [
         FeedbackOut(
             feedback_id=r.feedback_id,

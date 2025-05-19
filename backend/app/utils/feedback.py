@@ -13,5 +13,7 @@ class FeedbackOut(BaseModel):
     rating: int
 
     model_config = {
-        "from_attributes": True  # Thay cho orm_mode ở Pydantic v2
+        "from_attributes": True 
     }
+
+

@@ -4,3 +4,4 @@ __pycache__/
 # Ignore unnecessary files
 frontend/node_modules
 venv
+.vscode
