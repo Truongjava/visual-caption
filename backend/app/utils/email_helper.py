@@ -30,3 +30,17 @@ async def send_otp_email(email: str, otp_store: dict):
     with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
         server.login(EMAIL_SENDER, EMAIL_APP_PASSWORD)
         server.send_message(msg)
+
+async def send_email(to_email: str, subject: str, body: str):
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = EMAIL_SENDER
+    msg["To"] = to_email
+    msg.set_content(body)
+
+    context = ssl.create_default_context()
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
+        server.login(EMAIL_SENDER, EMAIL_APP_PASSWORD)
+        server.send_message(msg)
+
