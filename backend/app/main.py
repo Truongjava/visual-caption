@@ -16,7 +16,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://visual-caption-4fpe.onrender.com", "https://visualcaption.onrender.com","http://localhost:5173","https://visualcaption2.onrender.com"],
+    allow_origins=["http://localhost:3000", "https://visual-caption-4fpe.onrender.com", "https://visualcaption.onrender.com","http://localhost:5173","https://visualcaption2.onrender.com","http://192.168.1.28:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
