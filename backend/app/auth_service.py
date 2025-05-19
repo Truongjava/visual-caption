@@ -6,8 +6,11 @@ from app.utils.email_helper import send_otp_email, OTP_STORE
 from app.utils.auth_utils import hash_password, verify_password, generate_jwt_token
 import uuid
 from uuid import UUID
+from datetime import datetime
 from app.utils.feedback import FeedbackCreate, FeedbackOut
 from .database import get_db
+from typing import Optional
+from fastapi import Path, Query
 
 
 router = APIRouter()
@@ -158,5 +161,285 @@ async def get_feedbacks_for_user(
             content=r.content,
             rating=r.rating
         )
+        for r in rows
+    ]
+
+
+@router.get("/admin/users")
+async def get_users(
+    search: Optional[str] = Query(None),
+    status: Optional[bool] = Query(None),
+    db: AsyncSession = Depends(get_db)
+):
+    query_str = "SELECT user_id, email, username, is_active FROM users WHERE TRUE"
+    params = {}
+
+    if search:
+        query_str += " AND (email ILIKE :search OR username ILIKE :search)"
+        params["search"] = f"%{search}%"
+
+    if status is not None:
+        query_str += " AND is_active = :status"
+        params["status"] = status
+
+    result = await db.execute(text(query_str), params)
+    rows = result.fetchall()
+
+    return [
+        {
+            "user_id": str(row.user_id),
+            "email": row.email,
+            "username": row.username,
+            "is_active": row.is_active
+        }
+        for row in rows
+    ]
+
+# PATCH: Đổi trạng thái hoạt động của người dùng (active/inactive)
+@router.patch("/admin/users/{user_id}/status")
+async def toggle_user_status(
+    user_id: UUID = Path(...),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        text("SELECT is_active FROM users WHERE user_id = :uid"),
+        {"uid": str(user_id)}
+    )
+    row = result.fetchone()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="User không tồn tại")
+
+    new_status = not row.is_active
+    await db.execute(
+        text("UPDATE users SET is_active = :status WHERE user_id = :uid"),
+        {"status": new_status, "uid": str(user_id)}
+    )
+    await db.commit()
+
+    return {
+        "message": "Trạng thái người dùng đã được cập nhật.",
+        "user_id": str(user_id),
+        "new_status": new_status
+    }
+
+# DELETE: Xóa người dùng
+@router.delete("/admin/users/{user_id}")
+async def delete_user(
+    user_id: UUID = Path(...),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        text("SELECT 1 FROM users WHERE user_id = :uid"),
+        {"uid": str(user_id)}
+    )
+    if not result.scalar():
+        raise HTTPException(status_code=404, detail="User không tồn tại")
+
+    await db.execute(
+        text("DELETE FROM users WHERE user_id = :uid"),
+        {"uid": str(user_id)}
+    )
+    await db.commit()
+
+    return {
+        "message": "Người dùng đã được xóa.",
+        "user_id": str(user_id)
+    }
+
+
+
+@router.get("/admin/feedback")
+async def get_all_feedback(
+    search: Optional[str] = Query(None),
+    rating: Optional[int] = Query(None),
+    db: AsyncSession = Depends(get_db)
+):
+    query_str = "SELECT feedback_id, user_id, content, rating, created_at, response, resolved FROM feedback WHERE TRUE"
+    params = {}
+
+    if search:
+        query_str += " AND content ILIKE :search"
+        params["search"] = f"%{search}%"
+
+    if rating is not None:
+        query_str += " AND rating = :rating"
+        params["rating"] = rating
+
+    result = await db.execute(text(query_str), params)
+    rows = result.fetchall()
+
+    return [
+        {
+            "feedback_id": str(r.feedback_id),
+            "user_id": str(r.user_id),
+            "content": r.content,
+            "rating": r.rating,
+            "created_at": r.created_at,
+            "response": r.response,
+            "resolved": r.resolved
+        }
+        for r in rows
+    ]
+
+# POST: Phản hồi feedback
+@router.post("/admin/feedback/{feedback_id}/response")
+async def respond_to_feedback(
+    feedback_id: UUID,
+    response: str = Query(...),
+    db: AsyncSession = Depends(get_db)
+):
+    # Kiểm tra tồn tại
+    res = await db.execute(
+        text("SELECT 1 FROM feedback WHERE feedback_id = :fid"),
+        {"fid": str(feedback_id)}
+    )
+    if not res.scalar():
+        raise HTTPException(404, detail="Feedback không tồn tại")
+
+    # Cập nhật phản hồi
+    await db.execute(
+        text("UPDATE feedback SET response = :response WHERE feedback_id = :fid"),
+        {"response": response, "fid": str(feedback_id)}
+    )
+    await db.commit()
+
+    return {"message": "Đã phản hồi feedback."}
+
+# PATCH: Đánh dấu feedback là đã xử lý
+@router.patch("/admin/feedback/{feedback_id}/status")
+async def mark_feedback_resolved(
+    feedback_id: UUID,
+    db: AsyncSession = Depends(get_db)
+):
+    # Kiểm tra tồn tại
+    res = await db.execute(
+        text("SELECT resolved FROM feedback WHERE feedback_id = :fid"),
+        {"fid": str(feedback_id)}
+    )
+    row = res.fetchone()
+
+    if not row:
+        raise HTTPException(404, detail="Feedback không tồn tại")
+
+    if row.resolved:
+        return {"message": "Feedback đã được đánh dấu là đã xử lý trước đó."}
+
+    await db.execute(
+        text("UPDATE feedback SET resolved = TRUE WHERE feedback_id = :fid"),
+        {"fid": str(feedback_id)}
+    )
+    await db.commit()
+
+    return {"message": "Feedback đã được đánh dấu là đã xử lý."}
+
+
+
+@router.get("/admin/stats")
+async def get_admin_stats(db: AsyncSession = Depends(get_db)):
+    stats = {}
+
+    # Tổng số người dùng
+    res = await db.execute(text("SELECT COUNT(*) FROM users"))
+    stats["total_users"] = res.scalar()
+
+    # Tổng số feedback
+    res = await db.execute(text("SELECT COUNT(*) FROM feedback"))
+    stats["total_feedback"] = res.scalar()
+
+    # Tổng số caption (uploads)
+    res = await db.execute(text("SELECT COUNT(*) FROM uploads"))
+    stats["total_captions"] = res.scalar()
+
+    return stats
+
+
+@router.get("/admin/captions")
+async def get_admin_captions(
+    search: Optional[str] = Query(None),
+    type: Optional[str] = Query(None),
+    sort: Optional[str] = Query(None),
+    limit: Optional[int] = Query(None),
+    db: AsyncSession = Depends(get_db)
+):
+    query_str = "SELECT upload_id, user_id, file_url, file_type, caption, uploaded_at FROM uploads WHERE TRUE"
+    params = {}
+
+    if search:
+        query_str += " AND caption ILIKE :search"
+        params["search"] = f"%{search}%"
+
+    if type:
+        query_str += " AND file_type = :type"
+        params["type"] = type
+
+    if sort == "created_at":
+        query_str += " ORDER BY uploaded_at DESC"
+
+    if limit:
+        query_str += " LIMIT :limit"
+        params["limit"] = limit
+
+    result = await db.execute(text(query_str), params)
+    rows = result.fetchall()
+
+    return [
+        {
+            "upload_id": str(r.upload_id),
+            "user_id": str(r.user_id),
+            "file_url": r.file_url,
+            "file_type": r.file_type,
+            "caption": r.caption,
+            "uploaded_at": r.uploaded_at
+        }
+        for r in rows
+    ]
+
+
+
+
+@router.get("/admin/feedback")
+async def get_all_feedback(
+    search: Optional[str] = Query(None),
+    rating: Optional[int] = Query(None),
+    sort: Optional[str] = Query(None),
+    limit: Optional[int] = Query(None),
+    db: AsyncSession = Depends(get_db)
+):
+    query_str = """
+        SELECT feedback_id, user_id, content, rating, created_at, response, resolved
+        FROM feedback
+        WHERE TRUE
+    """
+    params = {}
+
+    if search:
+        query_str += " AND content ILIKE :search"
+        params["search"] = f"%{search}%"
+
+    if rating is not None:
+        query_str += " AND rating = :rating"
+        params["rating"] = rating
+
+    if sort == "created_at":
+        query_str += " ORDER BY created_at DESC"
+
+    if limit:
+        query_str += " LIMIT :limit"
+        params["limit"] = limit
+
+    result = await db.execute(text(query_str), params)
+    rows = result.fetchall()
+
+    return [
+        {
+            "feedback_id": str(r.feedback_id),
+            "user_id": str(r.user_id),
+            "content": r.content,
+            "rating": r.rating,
+            "created_at": r.created_at,
+            "response": r.response,
+            "resolved": r.resolved
+        }
         for r in rows
     ]

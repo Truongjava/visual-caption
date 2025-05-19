@@ -4,6 +4,8 @@ from sqlalchemy import text
 from app.database import get_db
 from uuid import uuid4
 from datetime import datetime
+from typing import Optional
+from uuid import UUID
 
 router = APIRouter()
 
@@ -50,5 +52,94 @@ async def get_user_uploads(user_id: str, db: AsyncSession = Depends(get_db)):
         # Trả về các bản ghi của user
         uploads_data = [{"upload_id": upload.upload_id, "file_url": upload.file_url, "file_type": upload.file_type, "caption": upload.caption, "uploaded_at": upload.uploaded_at} for upload in uploads]
         return {"uploads": uploads_data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/admin/captions")
+async def get_captions(
+    search: Optional[str] = None,
+    type: Optional[str] = None,
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        query = "SELECT upload_id, user_id, file_url, file_type, caption, uploaded_at FROM uploads WHERE TRUE"
+        params = {}
+
+        if search:
+            query += " AND caption ILIKE :search"
+            params["search"] = f"%{search}%"
+
+        if type:
+            query += " AND file_type = :type"
+            params["type"] = type
+
+        result = await db.execute(text(query), params)
+        rows = result.fetchall()
+
+        return [
+            {
+                "upload_id": str(row.upload_id),
+                "user_id": str(row.user_id),
+                "file_url": row.file_url,
+                "file_type": row.file_type,
+                "caption": row.caption,
+                "uploaded_at": row.uploaded_at
+            }
+            for row in rows
+        ]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# GET: Chi tiết một caption
+@router.get("/admin/captions/{caption_id}")
+async def get_caption_detail(
+    caption_id: UUID,
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        query = text("""
+            SELECT upload_id, user_id, file_url, file_type, caption, uploaded_at
+            FROM uploads
+            WHERE upload_id = :cid
+        """)
+        result = await db.execute(query, {"cid": str(caption_id)})
+        row = result.fetchone()
+
+        if not row:
+            raise HTTPException(status_code=404, detail="Caption không tồn tại")
+
+        return {
+            "upload_id": str(row.upload_id),
+            "user_id": str(row.user_id),
+            "file_url": row.file_url,
+            "file_type": row.file_type,
+            "caption": row.caption,
+            "uploaded_at": row.uploaded_at
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# DELETE: Xóa một caption
+@router.delete("/admin/captions/{caption_id}")
+async def delete_caption(
+    caption_id: UUID,
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        # Kiểm tra caption có tồn tại không
+        check_query = text("SELECT 1 FROM uploads WHERE upload_id = :cid")
+        check_result = await db.execute(check_query, {"cid": str(caption_id)})
+
+        if not check_result.scalar():
+            raise HTTPException(status_code=404, detail="Caption không tồn tại")
+
+        # Xóa caption
+        delete_query = text("DELETE FROM uploads WHERE upload_id = :cid")
+        await db.execute(delete_query, {"cid": str(caption_id)})
+        await db.commit()
+
+        return {"message": "Caption đã được xóa", "caption_id": str(caption_id)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
