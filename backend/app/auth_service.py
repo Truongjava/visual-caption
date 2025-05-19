@@ -11,7 +11,7 @@ from app.utils.feedback import FeedbackCreate, FeedbackOut
 from .database import get_db
 from typing import Optional
 from fastapi import Path, Query
-
+from app.utils.email_helper import send_email 
 
 router = APIRouter()
 
@@ -282,29 +282,70 @@ async def get_all_feedback(
         for r in rows
     ]
 
-# POST: Phản hồi feedback
+# # POST: Phản hồi feedback
+# @router.post("/admin/feedback/{feedback_id}/response")
+# async def respond_to_feedback(
+#     feedback_id: UUID,
+#     response: str = Query(...),
+#     db: AsyncSession = Depends(get_db)
+# ):
+#     # Kiểm tra tồn tại
+#     res = await db.execute(
+#         text("SELECT 1 FROM feedback WHERE feedback_id = :fid"),
+#         {"fid": str(feedback_id)}
+#     )
+#     if not res.scalar():
+#         raise HTTPException(404, detail="Feedback không tồn tại")
+
+#     # Cập nhật phản hồi
+#     await db.execute(
+#         text("UPDATE feedback SET response = :response WHERE feedback_id = :fid"),
+#         {"response": response, "fid": str(feedback_id)}
+#     )
+#     await db.commit()
+
+#     return {"message": "Đã phản hồi feedback."}
 @router.post("/admin/feedback/{feedback_id}/response")
 async def respond_to_feedback(
     feedback_id: UUID,
     response: str = Query(...),
     db: AsyncSession = Depends(get_db)
 ):
-    # Kiểm tra tồn tại
+    # Lấy user_id từ feedback
     res = await db.execute(
-        text("SELECT 1 FROM feedback WHERE feedback_id = :fid"),
+        text("SELECT user_id FROM feedback WHERE feedback_id = :fid"),
         {"fid": str(feedback_id)}
     )
-    if not res.scalar():
+    feedback_row = res.fetchone()
+    if not feedback_row:
         raise HTTPException(404, detail="Feedback không tồn tại")
+    
+    user_id = feedback_row.user_id
 
-    # Cập nhật phản hồi
+    # Lấy email người dùng
+    user_res = await db.execute(
+        text("SELECT email FROM users WHERE user_id = :uid"),
+        {"uid": str(user_id)}
+    )
+    user_row = user_res.fetchone()
+    if not user_row:
+        raise HTTPException(404, detail="Không tìm thấy người dùng tương ứng với feedback.")
+
+    email = user_row.email
+
+    # Cập nhật phản hồi vào DB
     await db.execute(
         text("UPDATE feedback SET response = :response WHERE feedback_id = :fid"),
         {"response": response, "fid": str(feedback_id)}
     )
     await db.commit()
 
-    return {"message": "Đã phản hồi feedback."}
+    # Gửi email phản hồi
+    subject = "Phản hồi từ hệ thống về góp ý của bạn"
+    body = f"Cảm ơn bạn đã gửi phản hồi.\nNội dung phản hồi của hệ thống: {response}"
+    await send_email(email, subject, body)
+
+    return {"message": "Đã phản hồi feedback và gửi email cho người dùng."}
 
 # PATCH: Đánh dấu feedback là đã xử lý
 @router.patch("/admin/feedback/{feedback_id}/status")
