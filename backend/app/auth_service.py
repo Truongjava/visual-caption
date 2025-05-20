@@ -190,7 +190,8 @@ async def get_users(
             "user_id": str(row.user_id),
             "email": row.email,
             "username": row.username,
-            "is_active": row.is_active
+            "is_active": row.is_active,
+            "created_at": row.created_at.isoformat() if row.created_at else None
         }
         for row in rows
     ]
