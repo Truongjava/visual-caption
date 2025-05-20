@@ -165,13 +165,48 @@ async def get_feedbacks_for_user(
     ]
 
 
+# @router.get("/admin/users")
+# async def get_users(
+#     search: Optional[str] = Query(None),
+#     status: Optional[bool] = Query(None),
+#     db: AsyncSession = Depends(get_db)
+# ):
+#     query_str = "SELECT user_id, email, username, is_active FROM users WHERE TRUE"
+#     params = {}
+
+#     if search:
+#         query_str += " AND (email ILIKE :search OR username ILIKE :search)"
+#         params["search"] = f"%{search}%"
+
+#     if status is not None:
+#         query_str += " AND is_active = :status"
+#         params["status"] = status
+
+#     result = await db.execute(text(query_str), params)
+#     rows = result.fetchall()
+
+#     return [
+#         {
+#             "user_id": str(row.user_id),
+#             "email": row.email,
+#             "username": row.username,
+#             "is_active": row.is_active
+#         }
+#         for row in rows
+#     ]
+
+
 @router.get("/admin/users")
 async def get_users(
     search: Optional[str] = Query(None),
     status: Optional[bool] = Query(None),
     db: AsyncSession = Depends(get_db)
 ):
-    query_str = "SELECT user_id, email, username, is_active FROM users WHERE TRUE"
+    query_str = """
+        SELECT user_id, email, username, is_active, created_at
+        FROM users
+        WHERE TRUE
+    """
     params = {}
 
     if search:
@@ -195,6 +230,7 @@ async def get_users(
         }
         for row in rows
     ]
+
 
 # PATCH: Đổi trạng thái hoạt động của người dùng (active/inactive)
 @router.patch("/admin/users/{user_id}/status")
