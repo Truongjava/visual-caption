@@ -20,8 +20,10 @@ async def generate_caption(image_bytes: bytes) -> str:
 async def information_destination(image_bytes: bytes) -> str:
     model = genai.GenerativeModel("gemini-1.5-flash-001")
 
-    prompt = "Đây là địa điểm nào ở Việt Nam, hãy cho tôi thông tin du lịch về địa điểm này bằng tiếng Việt."
+    # prompt = "Đây là địa điểm nào ở Việt Nam, hãy cho tôi thông tin du lịch về địa điểm này bằng tiếng Việt."
 
+    prompt = "Đây là địa điểm nào ở Việt Nam."
+    
     response = model.generate_content([
         prompt,
         {"mime_type": "image/jpeg", "data": image_bytes}
